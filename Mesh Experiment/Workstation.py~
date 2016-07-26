@@ -1,0 +1,488 @@
+import socket
+from threading import Thread, Timer
+import time
+import SocketServer
+import os, subprocess
+import sys
+import math, random
+import copy
+
+try:
+        check_output = subprocess.check_output
+except AttributeError:
+        def check_output(*popenargs, **kwargs):
+                if 'stdout' in kwargs:
+                        raise ValueError('stdout argument not allowed, it will be overridden.')
+                process = subprocess.Popen(stdout=subprocess.PIPE, *popenargs, **kwargs)
+                output, unused_err = process.communicate()
+                retcode = process.poll()
+                if retcode:
+                        cmd = kwargs.get("args")
+                        if cmd is None:
+                                cmd = popenargs[0]
+                        raise CalledProcessError(retcode, cmd, output=output)
+                return output
+
+con1080=[]
+all1080=[]
+con720=[]
+all720=[]
+con480=[]
+all480=[]
+con360=[]
+all360=[]
+dead=[]
+serve=None
+session=False
+
+def ending():
+	session=False
+
+def client(ip, port, message):
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.connect((ip, port))
+    try:
+        sock.sendall(message)
+        response = sock.recv(1024)
+        return response
+    finally:
+        sock.close()
+
+def switch(x, Q, item):
+        for z in item.outgoinglist:
+                for i in z.incominglist:
+                        if i.IP == item.IP:
+                                i.incominglist.remove(i)
+                                i.incominglist.append(random.sample(item.incominglist,1))
+        for y in item.incominglist:
+                for j in y.outgoinglist:
+                        if j.IP == item.IP:
+                                y.outgoinglist.remove(j)
+        item.incominglist=[]
+        item.outgoinglist=[]
+        if x ==1:
+                if Q == "1080P":
+                        for m in con1080:
+                                if m.IP == item.IP:
+                                        con1080.remove(m)
+                        for m in all1080:
+                                if m.IP == item.IP:
+                                        all1080.remove(m)
+                elif Q =="720P":
+                        for m in con720:
+                                if m.IP == item.IP:
+                                        con720.remove(m)
+                        for m in all720:
+                                if m.IP == item.IP:
+                                        all720.remove(m)
+                elif Q == "480P":
+                        for m in con480:
+                                if m.IP == item.IP:
+                                        con480.remove(m)
+                        for m in all480:
+                                if m.IP == item.IP:
+                                        all480.remove(m)
+                elif Q == "360P":
+                        for m in con360:
+                                if m.IP == item.IP:
+                                        con360.remove(m)
+                        for m in all360:
+                                if m.IP == item.IP:
+                                        all360.remove(m)
+                elif Q == "dead":
+                        for m in dead:
+                                if m.IP == item.IP:
+                                        dead.remove(m)
+                
+                all1080.append(copy.deepcopy(item))
+                if len(con1080)<4: 
+                        for n in con1080:
+                                item.incominglist.append(copy.deepcopy(n))
+                                n.outgoinglist.append(copy.deepcopy(n))
+                else:
+                        for n in sample.random(con1080, 4):
+                                item.incominglist.append(copy.deepcopy(n))
+                                n.outgoinglist.append(copy.deepcopy(n))
+                con1080.append(copy.deepcopy(item))
+        if x ==2:
+                if Q == "1080P":
+                        for m in con1080:
+                                if m.IP == item.IP:
+                                        con1080.remove(m)
+                        for m in all1080:
+                                if m.IP == item.IP:
+                                        all1080.remove(m)
+                elif Q =="720P":
+                        for m in con720:
+                                if m.IP == item.IP:
+                                        con720.remove(m)
+                        for m in all720:
+                                if m.IP == item.IP:
+                                        all720.remove(m)
+                elif Q == "480P":
+                        for m in con480:
+                                if m.IP == item.IP:
+                                        con480.remove(m)
+                        for m in all480:
+                                if m.IP == item.IP:
+                                        all480.remove(m)
+                elif Q == "360P":
+                        for m in con360:
+                                if m.IP == item.IP:
+                                        con360.remove(m)
+                        for m in all360:
+                                if m.IP == item.IP:
+                                        all360.remove(m)
+                elif Q == "dead":
+                        for m in dead:
+                                if m.IP == item.IP:
+                                        dead.remove(m)
+                all720.append(copy.deepcopy(item))
+                if len(con720)<4:
+                        for n in con720:
+                                item.incominglist.append(copy.deepcopy(n))
+                                n.outgoinglist.append(copy.deepcopy(n))
+                else:
+                        for n in sample.random(con720, 4):
+                                item.incominglist.append(copy.deepcopy(n))
+                                n.outgoinglist.append(copy.deepcopy(n))
+                con720.remove(copy.deepcopy(item))      
+        if x ==3:
+                if Q == "1080P":
+                        for m in con1080:
+                                if m.IP == item.IP:
+                                        con1080.remove(m)
+                        for m in all1080:
+                                if m.IP == item.IP:
+                                        all1080.remove(m)
+                elif Q =="720P":
+                        for m in con720:
+                                if m.IP == item.IP:
+                                        con720.remove(m)
+                        for m in all720:
+                                if m.IP == item.IP:
+                                        all720.remove(m)
+                elif Q == "480P":
+                        for m in con480:
+                                if m.IP == item.IP:
+                                        con480.remove(m)
+                        for m in all480:
+                                if m.IP == item.IP:
+                                        all480.remove(m)
+                elif Q == "360P":
+                        for m in con360:
+                                if m.IP == item.IP:
+                                        con360.remove(m)
+                        for m in all360:
+                                if m.IP == item.IP:
+                                        all360.remove(m)
+                elif Q == "dead":
+                        for m in dead:
+                                if m.IP == item.IP:
+                                        dead.remove(m)
+                all480.append(copy.deepcopy(item))
+                if len(con480)<4:
+                        for n in con480:
+                                item.incominglist.append(copy.deepcopy(n))
+                                n.outgoinglist.append(copy.deepcopy(n))
+                else:
+                        for n in sample.random(con480, 4):
+                                item.incominglist.append(copy.deepcopy(n))
+                                n.outgoinglist.append(copy.deepcopy(n))
+                con480.append(copy.deepcopy(item))
+        if x == 4:
+                if Q == "1080P":
+                        for m in con1080:
+                                if m.IP == item.IP:
+                                        con1080.remove(m)
+                        for m in all1080:
+                                if m.IP == item.IP:
+                                        all1080.remove(m)
+                elif Q =="720P":
+                        for m in con720:
+                                if m.IP == item.IP:
+                                        con720.remove(m)
+                        for m in all720:
+                                if m.IP == item.IP:
+                                        all720.remove(m)
+                elif Q == "480P":
+                        for m in con480:
+                                if m.IP == item.IP:
+                                        con480.remove(m)
+                        for m in all480:
+                                if m.IP == item.IP:
+                                        all480.remove(m)
+                elif Q == "360P":
+                        for m in con360:
+                                if m.IP == item.IP:
+                                        con360.remove(m)
+                        for m in all360:
+                                if m.IP == item.IP:
+                                        all360.remove(m)
+                elif Q == "dead":
+                        for m in dead:
+                                if m.IP == item.IP:
+                                        dead.remove(m)
+                all360.append(copy.deepcopy(item))
+                if len(con360)<4:
+                        for n in con360:
+                                item.incominglist.append(copy.deepcopy(n))
+                                n.outgoinglist.append(copy.deepcopy(n))
+                else:
+                        for n in sample.random(con360, 4):
+                                item.incominglist.append(copy.deepcopy(n))
+                                n.outgoinglist.append(copy.deepcopy(n))
+                con360.append(copy.deepcopy(item))
+        if x == 5:
+                if Q == "1080P":
+                        for m in con1080:
+                                if m.IP == item.IP:
+                                        con1080.remove(m)
+                        for m in all1080:
+                                if m.IP == item.IP:
+                                        all1080.remove(m)
+                elif Q =="720P":
+                        for m in con720:
+                                if m.IP == item.IP:
+                                        con720.remove(m)
+                        for m in all720:
+                                if m.IP == item.IP:
+                                        all720.remove(m)
+                elif Q == "480P":
+                        for m in con480:
+                                if m.IP == item.IP:
+                                        con480.remove(m)
+                        for m in all480:
+                                if m.IP == item.IP:
+                                        all480.remove(m)
+                elif Q == "360P":
+                        for m in con360:
+                                if m.IP == item.IP:
+                                        con360.remove(m)
+                        for m in all360:
+                                if m.IP == item.IP:
+                                        all360.remove(m)
+                elif Q == "dead":
+                        for m in dead:
+                                if m.IP == item.IP:
+                                        dead.remove(m)
+                dead.append(copy.deepcopy(item))
+                item.incominglist.append(copy.deepcopy(serve))
+	for k in item.incominglist:
+		p=open(item.IP, 'a')
+		p.write(k.IP + "\n")
+		p.close()
+	p=open(item.IP, 'a')
+	p.write("end \n")
+	p.close()
+                
+
+
+class Node:
+        tier = 0
+        Noutgoing = 0
+        outgoinglist = []
+        incominglist = []
+        nincoming = 4
+        bandwidth = 0
+        IP = ""
+        separation = 0
+        max_recv = 0
+        band_recv = 0
+        load=0
+        Q=""
+        highestframe=0
+        
+        def __init__(self, IP):
+                self.IP = IP
+                self.Q="360P"
+                self.incominglist.append(copy.deepcopy(serve))
+
+        def send(self, pattern, starting, item):
+                b=client(self.IP, 5360, item.IP)
+                if self.Q == "1080P":
+                        for x in range( starting, starting +15, pattern):
+                                if client(self.IP, 5360, "send "+item.IP+" " + x + " " + self.Q) == None:
+                                        if item.highestframe<x:
+                                                item.highestframe=x
+                                else:
+                                        random.sample(item.incominglist,1).sendfix(x)
+                                system.sleep(3000/b)
+                if self.Q == "720P":
+                        for x in range( starting, starting +15, pattern):
+                                if client(self.IP, 5360, "send "+item.IP+" " + x + " " + self.Q) == None:
+                                        if item.highestframe<x:
+                                                item.highestframe=x
+                                else:
+                                        random.sample(item.incominglist,1).sendfix(x)
+                                system.sleep(2000/b)
+                if self.Q == "480P":
+                        for x in range( starting, starting +15, pattern):
+                                if client(self.IP, 5360, "send "+item.IP+" " + x + " " + self.Q) == None:
+                                        if item.highestframe<x:
+                                                item.highestframe=x
+                                else:
+                                        random.sample(item.incominglist,1).sendfix(x)
+                                system.sleep(1000/b)
+                if self.Q == "360P":
+                        for x in range( starting, starting +15, pattern):
+                                if client(self.IP, 5360, "send "+item.IP+" " + x + " " + self.Q) == None:
+                                        if item.highestframe<x:
+                                                item.highestframe=x
+                                else:
+                                        random.sample(item.incominglist,1).sendfix(x)
+                                system.sleep(250/b)
+                if self.Q == "dead":
+                        for x in range(starting, starting +15, pattern):
+                                if client(self.IP, 5360, "send "+item.IP+" " + x + " " + self.Q) == None:
+                                        if item.highestframe<x:
+                                                item.highestframe=x
+                                else:
+                                        random.sample(item.incominglist,1).sendfix(x)
+                                system.sleep(3000/b)
+
+
+
+        def getPackets(self):
+		global session
+		if session ==True:
+		        pattern=len(self.incominglist)
+			for item in self.incominglist:
+				debug=open("debug", 'a')
+				debug.write("1 " +str(type(item))+" \n")
+				debug.close()
+			for item in self.incominglist:
+				if str(type(item)) != "<type 'NoneType'>":
+					item.send(pattern, self.highestframe, self)
+					self.highestframe+=1
+			system.sleep(20)
+			self.getPackets()
+                        
+
+        def sendfix(self,x):
+                client(self.IP, 5360, "send "+item.IP+" " + x + " " + self.Q)                   
+
+        def checkstatus(self):
+                if self.Q == "1080P":
+                        if self.bandwidth< 1.05*3000:
+                                if self.bandwidth > 1.05*2000:
+                                        switch(2, self.Q,self)
+                                        Q="720P"
+                                elif self.bandwidth > 1.05*1000:
+                                        switch(3,self.Q,self)
+                                        Q="480P"
+                                elif self.bandwidth > 1.05*250:
+                                        switch(4, self.Q,self)
+                                        self.Q="360P"
+                                else:
+                                        switch(5, self.Q,self)
+                                        self.Q="dead"
+                elif self.Q == "720P":
+                        if self.bandwidth > 1.05*3000:
+                                switch(1,self.Q,self)
+                                self.Q= "1080P"
+                        elif self.bandwidth <1.05*2000:
+                                if self.bandwidth > 1.05*1000:
+                                        switch(3, self.Q,self)
+                                        self.Q="480P"
+                                elif self.bandwidth >1.05*250:
+                                        switch(4, self.Q,self)
+                                        self.Q="360P"
+                                else:
+                                        switch(5, self.Q,self)
+                                        self.Q="dead"
+                elif self.Q=="480P":
+                        if self.bandwidth > 1.05*1000:
+                                if self.bandwidth >1.05*3000:
+                                        switch(1, self.Q,self)
+                                        self.Q="1080P"
+                                elif self.bandwidth > 1.05*2000:
+                                        switch(2, self.Q,self)
+                                        self.Q="720P"
+                        elif self.bandwidth < 1.05*1000:
+                                if self.bandwidth > 1.05*250:
+                                        switch(4, self.Q,self)
+                                        self.Q = "360P"
+                                else:
+                                        switch(5,self.Q, self)
+                                        self.Q="dead"
+                elif self.Q=="360P":
+                        if self.bandwidth > 1.05*250:
+                                if self.bandwidth >1.05*3000:
+                                        switch(1,self.Q,self)
+                                        self.Q="1080P"
+                                elif self.bandwidth > 1.05*2000:
+                                        switch(2,self.Q,self)
+                                        self.Q="720P"
+                                elif self.bandwidth >1.05*1000:
+                                        switch(3,self.Q,self)
+                                        self.Q="480P"
+                        elif self.bandwidth<1.05*250:
+                                switch(5, self.Q,self)
+                                self.Q="dead"
+                
+                else:
+                        if self.bandwidth >1.05*3000:
+                                switch(1,self.Q,self)
+                                self.Q="1080P"
+                        elif self.bandwidth > 1.05*2000:
+                                switch(2,self.Q, self)
+                                self.Q="720P"
+                        elif self.bandwidth >1.05*1000:
+                                switch(3,self.Q, self)
+                                self.Q="480P"
+                        elif self.bandwidth > 1.05*250:
+                                switch(4, self.Q, self)
+                                self.Q="360P"
+
+
+        def getBandwidth(self):
+		global session
+		if session == True:
+		        self.bandwidth=0
+		        for item in self.incominglist:
+				if str(type(item)) != "<type 'NoneType'>":
+		                	self.bandwidth+=int(client(self.IP, 5360, item.IP.rstrip()))
+		        self.checkstatus()
+		        system.sleep(120)
+		        self.getBandwidth()
+                        
+
+
+
+
+if __name__ == "__main__":
+        nodeList=[]
+	threads=[]
+        f= open("TIVip", 'r')
+        line = f.readline()
+        serve=Node(line.rstrip())
+        serve.incominglist=[]
+        con1080.append(copy.deepcopy(serve))
+        con720.append(copy.deepcopy(serve))
+        con480.append(copy.deepcopy(serve))
+        con360.append(copy.deepcopy(serve))
+        dead.append(copy.deepcopy(serve))
+        line=f.readline()
+
+	session=True
+        while line!="":
+                nodeList.append(Node(line.rstrip()))
+                line=f.readline()
+	for item in nodeList:
+		debug=open("debug",'a')
+		debug.write(item.IP+ " \n")
+		debug.close()
+	t=Timer(65, ending)
+	t.dameon = True
+	t.start()
+	for item in nodeList:
+        	threads.insert(0,Thread(target=item.getBandwidth, args =()))
+		threads[0].dameon=True
+		threads[0].start()
+	for item in nodeList:
+		threads.insert(0, Thread(target=item.getPackets, args=()))
+		threads[0].dameon=True
+		threads[0].start()
+        print "done"
+        print "nope"

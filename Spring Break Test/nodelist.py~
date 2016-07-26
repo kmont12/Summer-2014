@@ -1,0 +1,11 @@
+import os, subprocess
+
+
+out=open("nodeIP",'r')
+
+for line in out:
+	subprocess.call("mkdir "+line)
+
+    
+f.close()
+out.close()

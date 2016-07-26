@@ -1,0 +1,265 @@
+##
+#
+#Last Edited by: Keith
+#Last saved: May 19, 2014 7:51 PM
+#
+##
+
+import socket
+import threading
+import SocketServer
+import os, subprocess
+from time import sleep, strftime, gmtime
+from random import sample, randint
+from math import ceil, floor, log
+
+try:
+	check_output = subprocess.check_output
+except AttributeError:
+	def check_output(*popenargs, **kwargs):
+		if 'stdout' in kwargs:
+			raise ValueError('stdout argument not allowed, it will be overridden.')
+		process = subprocess.Popen(stdout=subprocess.PIPE, *popenargs, **kwargs)
+		output, unused_err = process.communicate()
+		retcode = process.poll()
+		if retcode:
+			cmd = kwargs.get("args")
+			if cmd is None:
+				cmd = popenargs[0]
+			raise CalledProcessError(retcode, cmd, output=output)
+		return output
+
+def client(ip, port, message):  #send message to the clients; response is the latency between client and message IP
+	sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+	sock.connect((ip, port))
+	try:
+		sock.sendall(message)
+		response = sock.recv(1024)
+		return response
+	finally:
+		sock.close()
+
+class Session:
+	src = ""
+	dest = ""
+	folder = ""
+	intermediate = ""
+	sessionTime = 0
+	threshold = 0.0
+	k = 0
+
+	alpha = .8
+	beta = .2
+
+	selectionStarted = False
+	thresholdBreakCount = 0
+	thresholdClearCount = 0
+	clearTolerance = 5
+	breakTolerance = 5
+	latencySensitivity = 10
+	memoryTolerance = 120
+	ending = False
+
+	f1 = ""
+	f2 = ""
+	f3 = ""
+
+	def __init__(self, src, dest, folder, k): #start session
+		self.src = src
+		self.dest = dest
+		self.folder = folder
+		self.sessionTime = randint(3,10)
+		self.k = k
+		self.f1 = open(folder+"/defaultTrace", 'a')
+		self.f2 = open(folder+"/detourTrace", 'a')
+		self.f3 = open(folder+"/selectionTrace", 'a')
+
+	def end(self): #session has ended
+		self.ending = True
+
+	def saveNode(self, intermediate): #node is good; save it for the future sessions
+		f = open(self.src + "/goodnodes", 'r+')
+		line = f.readline()
+		while (line != ""):
+			if (line.rstrip() == intermediate.rstrip()):
+				return
+			line = f.readline()
+		f.write(intermediate + "\n")
+		f.close()
+	
+	def intermediateTest(self): #test for better options
+		f1 = open("nodeIP", 'r')
+		f2 = open(self.src+"/goodnodes", 'r')
+		goodcount = 0
+		for line in f2:
+			goodcount += 1
+		if (goodcount >= self.k):
+			goodcount = int(floor(k / 2)) 
+		f2.seek(0,0)
+		
+		c1 = sample(f1.readlines(), self.k - goodcount)
+		c2 = sample(f2.readlines(), goodcount)
+
+		f1.close()	
+		f2.close()
+
+		candidates = c1 + c2	#candidates for testing	
+
+		for c in candidates:
+			try:
+				AIlatency = client(self.src, 5360, c.rstrip()).rstrip()
+			except:
+				AIlatency = 9999.0			
+			try:
+				AIlatency = float(AIlatency)
+			except ValueError:	
+				AIlatency = 9999.1
+			try:
+				IBlatency = client(c.rstrip(), 5360, self.dest).rstrip()
+			except:
+				IBlatency = 9999.0			
+			try:
+				IBlatency = float(IBlatency)
+			except ValueError:	
+				IBlatency = 9999.1
+			AIBlatency = AIlatency + IBlatency
+			self.f3.write(c.rstrip() + ": " + str(AIBlatency) + "\n")
+			if (AIBlatency < self.threshold):
+				self.intermediate = c.rstrip()
+				self.f3.write("[ "+strftime("%H:%M:%S", gmtime())+" ]" + "Selected " + self.intermediate + " as intermediate.\n")
+				self.thresholdClearCount = 0
+				self.thresholdBreakCount = 0
+				self.selectionStarted = False
+				break
+		self.selectionStarted = False
+
+	def intermediatePing(self):
+		t = threading.Thread(target=self.intermediateTest, args=())
+		t.Daemon = True
+		try:
+			AIlatency = client(self.src, 5360, self.intermediate).rstrip()
+		except:
+			AIlatency = 9999.0		
+		try:
+			AIlatency = float(AIlatency)
+		except ValueError:	
+			AIlatency = 9999.1
+		try:
+			IBlatency = client(self.intermediate, 5360, self.dest).rstrip()
+		except:
+			IBlatency = 9999.0		
+		try:
+			IBlatency = float(IBlatency)
+		except ValueError:	
+			IBlatency = 9999.1
+		latency = AIlatency + IBlatency
+		self.f2.write(str(latency) + "\n")
+		if (latency > self.threshold and self.selectionStarted == False):
+			self.thresholdBreakCount += int(floor(latency - self.threshold) / self.latencySensitivity)
+		else:
+			self.thresholdClearCount += int(floor(self.threshold - latency) / self.latencySensitivity)
+		if (self.thresholdClearCount >= self.memoryTolerance):
+			self.saveNode(self.intermediate)
+		if (self.thresholdBreakCount >= self.breakTolerance):
+			self.thresholdClearCount = 0			
+		if (self.thresholdClearCount >= self.clearTolerance):
+			self.thresholdBreakCount = 0
+		if (self.thresholdBreakCount >= self.breakTolerance and self.selectionStarted == False):
+			try:
+				self.selectionStarted = True
+				t.start()
+				t = threading.Thread(target=self.intermediateTest, args=())
+				t.Daemon = True
+			except Exception, errtxt:
+				print errtxt
+
+	def defaultPing(self):
+		self.f1.write("[ "+strftime("%H:%M:%S", gmtime())+" ]"+str(self.sessionTime)+"-minute session: " + self.src + " to " + self.dest + "\n")
+		self.f2.write("[ "+strftime("%H:%M:%S", gmtime())+" ]"+str(self.sessionTime)+"-minute session: " + self.src + " to " + self.dest + "\n")
+		self.f3.write("[ "+strftime("%H:%M:%S", gmtime())+" ]"+str(self.sessionTime)+"-minute session: " + self.src + " to " + self.dest + "\n")
+
+		timer = threading.Timer(float(self.sessionTime * 60), self.end)
+		timer.Daemon = True
+		timer.start()
+
+		#threshold testing
+		alphaPing = client(self.src, 5360, self.dest).rstrip()
+		try:
+			alphaPing = float(alphaPing)
+		except ValueError:
+			alphaPing = 9999.0
+		for i in range(0,4):
+			betaPing = client(self.src, 5360, self.dest).rstrip()
+			try:
+				betaPing = float(alphaPing)
+			except ValueError:
+				betaPing = 9999.1
+			alphaPing = self.alpha * alphaPing + self.beta * betaPing
+		self.threshold = alphaPing
+		if (self.threshold > 100.0):
+			self.threshold = self.threshold * 0.85
+		self.f1.write("Threshold: " + str(self.threshold) + "\n")
+
+		#initialize intermediate selection for later use
+		t = threading.Thread(target=self.intermediateTest, args=())
+		t.Daemon = True
+		
+		#pinging the default path
+		while(self.ending == False):
+			latency = client(self.src, 5360, self.dest).rstrip()
+			try:
+				latency = float(latency)
+			except ValueError:
+				latency = 9999.1
+			self.f1.write(str(latency) + "\n")
+			if (self.intermediate == ""):
+				if (latency > self.threshold and self.selectionStarted == False):
+					self.thresholdBreakCount += int(floor(latency - self.threshold) / self.latencySensitivity)
+				else:
+					self.thresholdClearCount += int(floor(self.threshold - latency) / self.latencySensitivity)
+				if (self.thresholdBreakCount >= self.breakTolerance):
+					self.thresholdClearCount = 0			
+				if (self.thresholdClearCount >= self.clearTolerance):
+					self.thresholdBreakCount = 0
+				if (self.thresholdBreakCount >= self.breakTolerance and self.selectionStarted == False):
+					try:
+						self.selectionStarted = True
+						t.start()
+						t = threading.Thread(target=self.intermediateTest, args=())
+						t.Daemon = True
+					except Exception, errtxt:
+						print errtxt
+			else:
+				self.intermediatePing()
+			sleep(1)
+
+if __name__ == "__main__":
+	f = open("nodeIP", 'r')
+	line = f.readline()
+	count = 0	
+	while (line != ""):
+		count += 1
+		line = f.readline()
+	k = int(ceil(log(count,2)))
+	f.close()
+		
+	for i in range(5700, 12000):
+		os.system("mkdir " + str(i))
+		print "Session "+ str(i)
+
+		f = open('nodeIP', 'r')
+		nodes = sample(f.readlines(), 2)
+		src = nodes[0].rstrip()
+		dest = nodes[1].rstrip()
+		f.close()
+
+		s = Session(src, dest, str(i), k)
+		t = threading.Thread(target=s.defaultPing,args=())
+		t.Daemon = True
+		t.start()
+
+		sleep(60)
+		
+	sleep(600)
+	
+	os.system("./vxargs-0.3.3.py -p -P 100 -t 45 -a nodeIP ssh ucf_NetSec@{} \"killall python\"")

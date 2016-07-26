@@ -1,0 +1,9 @@
+Traceback (most recent call last):
+  File "node.py", line 38, in <module>
+    server = ThreadedTCPServer((HOST, PORT), ThreadedTCPRequestHandler)
+  File "/usr/lib/python2.5/SocketServer.py", line 330, in __init__
+    self.server_bind()
+  File "/usr/lib/python2.5/SocketServer.py", line 341, in server_bind
+    self.socket.bind(self.server_address)
+  File "<string>", line 1, in bind
+socket.error: (98, 'Address already in use')
